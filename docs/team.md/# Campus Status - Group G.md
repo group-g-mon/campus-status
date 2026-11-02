@@ -8,5 +8,5 @@ Campus Status is a project for managing campus services using configuration file
 
 | Member | Week 5 role |
 | --- | --- |
-| Muhammad Ibrahim Masood | Change Coordinator |
-| Josh Harris | Project Coordinator |
+| Muhammad Masood | Project Coordinator |
+| Muhammad Yusuf Masood| Review Coordinator |

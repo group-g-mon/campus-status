@@ -18,3 +18,8 @@ backup/
 Thumbs.db
 .vscode/
 .idea/
+
+output/
+.venv/
+__pycache__/
+.pytest_cache/

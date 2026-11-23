@@ -4,23 +4,24 @@ from scripts.deploy_config import deploy_configs
 
 
 def test_deploy_copies_json_file(tmp_path):
-    # Arrange: one JSON file; the destination is deliberately absent.
+    # Arrange: source has one json file, destination does NOT exist yet
     source = tmp_path / "source"
     source.mkdir()
     (source / "service.json").write_text('{"enabled": true}', encoding="utf-8")
     destination = tmp_path / "deployment"
 
-    # Act: run the real function on the test's own input.
-    copied = deploy_configs(source, destination)
+    # Act
+    result = deploy_configs(source, destination)
 
-    # Assert: contents unchanged (D2), destination created (D4),
-    # and the returned path is exactly the deployed copy.
-    assert (destination / "service.json").read_text(encoding="utf-8") == '{"enabled": true}'
-    assert copied == [destination / "service.json"]
+    # Assert: file copied, content unchanged, returned path correct
+    copied = destination / "service.json"
+    assert copied.exists()
+    assert copied.read_text(encoding="utf-8") == '{"enabled": true}'
+    assert result == [copied]
 
 
 def test_deploy_excludes_other_files(tmp_path):
-    # Arrange: one permitted configuration file and one excluded note.
+    # Arrange: one json file AND one txt file
     source = tmp_path / "source"
     source.mkdir()
     (source / "service.json").write_text('{"enabled": true}', encoding="utf-8")
@@ -28,37 +29,38 @@ def test_deploy_excludes_other_files(tmp_path):
     destination = tmp_path / "deployment"
 
     # Act
-    copied = deploy_configs(source, destination)
+    result = deploy_configs(source, destination)
 
-    # Assert: check the entire destination, so an extra file cannot hide (D3).
-    assert sorted(path.name for path in destination.iterdir()) == ["service.json"]
-    assert copied == [destination / "service.json"]
+    # Assert: check ALL destination files, not just service.json
+    # (exists() alone would pass even if notes.txt was copied too)
+    assert sorted(p.name for p in destination.iterdir()) == ["service.json"]
+    assert result == [destination / "service.json"]
 
 
 def test_deploy_empty_source(tmp_path):
-    # Arrange: the source EXISTS but is empty. This deliberately differs
-    # from the missing-source case below, which must raise (D5 vs D6).
+    # Arrange: source exists but is empty.
+    # This deliberately differs from the missing-source case (that raises an error).
     source = tmp_path / "source"
     source.mkdir()
     destination = tmp_path / "deployment"
 
     # Act
-    copied = deploy_configs(source, destination)
+    result = deploy_configs(source, destination)
 
-    # Assert: a successful deployment of zero files (D5).
+    # Assert: destination created, empty, and [] returned
     assert destination.is_dir()
     assert list(destination.iterdir()) == []
-    assert copied == []
+    assert result == []
 
 
 def test_deploy_missing_source(tmp_path):
-    # Arrange: the source path is deliberately not created.
-    source = tmp_path / "missing"
+    # Arrange: source folder does NOT exist
+    source = tmp_path / "does_not_exist"
     destination = tmp_path / "deployment"
 
-    # Act + Assert: this negative test passes when the expected error occurs (D6).
+    # Act + Assert: must raise FileNotFoundError
     with pytest.raises(FileNotFoundError):
         deploy_configs(source, destination)
 
-    # An unsuccessful deployment must not leave a misleading destination.
+    # Easy to overlook: destination must NOT have been created
     assert not destination.exists()
